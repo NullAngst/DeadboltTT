@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Current crates
+        # Releases ship current crates: no exact pins, update right before building.
+        run: cargo update
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
+
+      - name: Gate on known-vulnerable crates
+        run: |
+          cargo audit
+          cargo deny check
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Packages
+        run: |
+          pipx install nfpm
+          packaging/build-packages.sh "${GITHUB_REF_NAME}"
+
+      - name: Source tarball
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          git archive --format=tar.gz --prefix="DeadboltTT-$v/" -o "dist/DeadboltTT-$v.tar.gz" HEAD
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum -- * > SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
