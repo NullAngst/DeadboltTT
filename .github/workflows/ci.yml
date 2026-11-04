@@ -1,0 +1,196 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# Actions are referenced by major version tag on purpose. SHA pinning protects
+# against a hijacked tag but goes stale; the monthly review checks each one.
+
+jobs:
+  lint-test:
+    name: Lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck python3-pyqt6 python3-pytest pipx
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
+
+      - name: Current crates
+        # No exact pins: pull the newest semver-compatible releases.
+        run: cargo update
+
+      - name: cargo fmt
+        run: cargo fmt --all --check
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test
+
+      - name: cargo audit
+        run: cargo audit
+
+      - name: cargo deny
+        run: cargo deny check
+
+      - name: ruff
+        run: |
+          pipx run ruff check gui/
+          pipx run ruff format --check gui/
+
+      - name: pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python3 -m pytest gui/
+
+      - name: shellcheck
+        run: |
+          shellcheck tools/deadbolt-shield-test scripts/*.sh packaging/*.sh \
+            packaging/scripts/*.sh packaging/scripts/config
+
+      - name: Only sys.rs uses unsafe
+        run: |
+          hits="$(grep -rln 'unsafe' crates/ --include=*.rs | grep -v 'crates/deadbolt-shield/src/sys.rs' || true)"
+          bad=""
+          for f in $hits; do
+            if grep -nE '\bunsafe\s*(\{|fn|impl)' "$f"; then bad="$bad $f"; fi
+          done
+          if [ -n "$bad" ]; then printf 'unsafe outside sys.rs:%s\n' "$bad"; exit 1; fi
+
+  package:
+    name: Build packages
+    needs: lint-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo update
+      - run: cargo build --release --locked
+      - name: nfpm
+        run: |
+          pipx install nfpm
+          packaging/build-packages.sh "0.0.0+ci.${GITHUB_RUN_NUMBER}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/
+
+  integration:
+    name: Integration (root, real kernel)
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: packages
+          path: dist/
+
+      - name: Install ClamAV and OpenSnitch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clamav clamav-daemon clamav-freshclam curl
+          # Upstream OpenSnitch: empty Server.Address support needs 1.7.1 or newer.
+          gh release download -R evilsocket/opensnitch --pattern 'opensnitch_*_amd64.deb' -D /tmp/osn
+          sudo apt-get install -y /tmp/osn/opensnitch_*_amd64.deb
+          sudo systemctl enable --now opensnitch.service
+
+      - name: Signatures
+        run: |
+          # freshclam is often rate limited from CI addresses. Fall back to a local
+          # EICAR signature so the tests do not depend on the mirror.
+          sudo systemctl stop clamav-freshclam.service || true
+          if ! sudo freshclam --quiet; then
+            printf '%s' 'X5O!P%@AP[4\PZX54(P^)7CC)7}$' >/tmp/e
+            printf '%s' 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' >>/tmp/e
+            printf '%s:%s:Deadbolt.CI.EICAR\n' "$(md5sum </tmp/e | cut -d' ' -f1)" "$(wc -c </tmp/e)" \
+              | sudo tee /var/lib/clamav/deadbolt-ci.hdb
+            rm -f /tmp/e
+          fi
+
+      - name: Install Deadbolt
+        run: sudo apt-get install -y ./dist/deadbolt_*_amd64.deb
+
+      - name: Setup
+        run: |
+          sudo deadboltctl setup --yes
+          sudo deadboltctl doctor
+
+      - name: EICAR is blocked and quarantined
+        run: sudo deadboltctl test eicar
+
+      - name: Shield freezes the simulator
+        run: sudo deadboltctl test shield
+
+      - name: Exit codes 0, 1, 2
+        run: |
+          mkdir -p /tmp/clean && printf 'hello\n' >/tmp/clean/a.txt
+          set +e
+          sudo deadboltctl scan /tmp/clean --json; c=$?
+          [ "$c" -eq 0 ] || { printf 'clean scan exit %s\n' "$c"; exit 1; }
+          # Outside the real-time paths, so on-access scanning doesn't move it first.
+          sudo mkdir -p /root/ci-dirty
+          printf '%s' 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' | sudo tee /root/ci-dirty/e.com >/dev/null
+          sudo deadboltctl scan /root/ci-dirty --json; c=$?
+          [ "$c" -eq 1 ] || { printf 'dirty scan exit %s\n' "$c"; exit 1; }
+          sudo deadboltctl scan /does/not/exist --json; c=$?
+          [ "$c" -eq 2 ] || { printf 'error scan exit %s\n' "$c"; exit 1; }
+
+      - name: Network block against curl
+        run: |
+          curl_bin="$(readlink -f "$(command -v curl)")"
+          sudo deadboltctl net block "$curl_bin"
+          sleep 3
+          if curl -sS -m 10 -o /dev/null https://example.com; then
+            printf 'curl still reached the internet while blocked\n'; exit 1
+          fi
+          sudo deadboltctl net unblock "$curl_bin"
+          sleep 3
+          curl -sS -m 20 -o /dev/null https://example.com
+
+      - name: Quarantine mount and permissions
+        run: |
+          findmnt -no OPTIONS /var/lib/deadbolt/quarantine | grep -q noexec
+          findmnt -no OPTIONS /var/lib/deadbolt/quarantine | grep -q nosuid
+          findmnt -no OPTIONS /var/lib/deadbolt/quarantine | grep -q nodev
+          [ "$(sudo stat -c '%a %U %G' /var/lib/deadbolt/quarantine)" = "700 root root" ]
+
+      - name: systemd-analyze security under 4.0
+        run: |
+          for u in deadboltd deadbolt-worker; do
+            score="$(systemd-analyze security "$u.service" --no-pager | grep 'Overall exposure level' | grep -oE '[0-9]+\.[0-9]+' | head -n 1)"
+            printf '%s: %s\n' "$u" "$score"
+            awk -v s="$score" 'BEGIN { exit !(s < 4.0) }'
+          done
+
+      - name: Weekly Quick scan timer is active
+        run: systemctl list-timers 'deadbolt-scan@*' --no-pager | grep -q 'deadbolt-scan@quick.timer'
+
+      - name: Uninstall restores distro units and keeps quarantine
+        run: |
+          sudo apt-get remove -y deadbolt
+          [ "$(systemctl is-enabled clamav-daemon.service 2>/dev/null || true)" != "masked" ]
+          [ -d /var/lib/deadbolt/quarantine ]
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          sudo journalctl -u deadboltd -u deadbolt-worker -u deadbolt-clamd -u deadbolt-clamonacc --no-pager | tail -200
