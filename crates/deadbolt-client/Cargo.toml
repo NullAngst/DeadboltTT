@@ -1,0 +1,19 @@
+[package]
+name = "deadbolt-client"
+description = "D-Bus client for deadboltd, shared by the TUI and deadboltctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+deadbolt-common = { path = "../deadbolt-common" }
+serde.workspace = true
+serde_json.workspace = true
+zbus.workspace = true
+tokio.workspace = true
+futures-util.workspace = true
+thiserror.workspace = true

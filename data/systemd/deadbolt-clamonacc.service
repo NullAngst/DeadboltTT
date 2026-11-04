@@ -1,0 +1,16 @@
+[Unit]
+Description=Deadbolt real-time scanning (clamonacc, fanotify)
+Documentation=man:clamonacc(8) https://github.com/NullAngst/DeadboltTT
+Requires=deadbolt-clamd.service
+After=deadbolt-clamd.service deadboltd.service
+
+[Service]
+Type=simple
+# clamonacc runs as root: it needs fanotify and has to see every file open.
+ExecStart=clamonacc --foreground --fdpass --wait -c /etc/deadbolt/clamd.conf --log=/var/log/deadbolt/onaccess.log
+Restart=on-failure
+RestartSec=5
+LogsDirectory=deadbolt
+
+[Install]
+WantedBy=multi-user.target

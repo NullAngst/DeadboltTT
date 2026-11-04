@@ -1,0 +1,52 @@
+[Unit]
+Description=Deadbolt file worker (scans, quarantine, canaries)
+Documentation=https://github.com/NullAngst/DeadboltTT
+Requires=var-lib-deadbolt-quarantine.mount
+After=var-lib-deadbolt-quarantine.mount
+PartOf=deadboltd.service
+
+[Service]
+Type=simple
+User=deadbolt-worker
+Group=deadbolt-worker
+# clamav group so it can reach clamd's socket (LocalSocketMode 660).
+SupplementaryGroups=clamav
+ExecStart=/usr/libexec/deadbolt/deadbolt-worker
+Restart=on-failure
+RestartSec=2
+
+RuntimeDirectory=deadbolt-worker
+RuntimeDirectoryMode=0700
+
+# Reading and moving files is its whole job: these four and nothing else.
+AmbientCapabilities=CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE CAP_FOWNER CAP_CHOWN
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE CAP_FOWNER CAP_CHOWN
+NoNewPrivileges=yes
+ProtectSystem=strict
+# No ProtectHome and no PrivateTmp: it must see the real /home and /tmp.
+ReadWritePaths=/var/lib/deadbolt/quarantine -/home -/srv -/mnt /tmp /var/tmp
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+PrivateDevices=yes
+RemoveIPC=yes
+ProtectProc=invisible
+# Its only socket is a Unix socket on disk, which works from a private network namespace.
+PrivateNetwork=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

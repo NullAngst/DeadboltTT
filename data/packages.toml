@@ -1,0 +1,188 @@
+# Backend tools Deadbolt checks for, and their package names per package manager.
+# Supporting another distro is a data edit here, not code.
+#
+# binary:   what is looked up on PATH
+# version:  arguments that print a version on the first line (empty = presence only)
+# service:  systemd unit that must be running for the tool to count as working (optional)
+
+[[tool]]
+name = "clamd"
+binary = "clamd"
+version = ["--version"]
+required = true
+feature = "Scan engine, holds signatures in memory"
+service = "deadbolt-clamd.service"
+packages = { apt = "clamav-daemon", dnf = "clamd", zypper = "clamav", pacman = "clamav" }
+
+[[tool]]
+name = "clamonacc"
+binary = "clamonacc"
+version = ["--version"]
+required = true
+feature = "Real-time scanning through fanotify"
+service = "deadbolt-clamonacc.service"
+packages = { apt = "clamav-daemon", dnf = "clamd", zypper = "clamav", pacman = "clamav" }
+
+[[tool]]
+name = "clamdscan"
+binary = "clamdscan"
+version = ["--version"]
+required = true
+feature = "Scan client"
+packages = { apt = "clamav-daemon", dnf = "clamav", zypper = "clamav", pacman = "clamav" }
+
+[[tool]]
+name = "clamscan"
+binary = "clamscan"
+version = ["--version"]
+required = true
+feature = "Fallback scans when clamd is down"
+packages = { apt = "clamav", dnf = "clamav", zypper = "clamav", pacman = "clamav" }
+
+[[tool]]
+name = "freshclam"
+binary = "freshclam"
+version = ["--version"]
+required = true
+feature = "Signature updates"
+packages = { apt = "clamav-freshclam", dnf = "clamav-freshclam", zypper = "clamav", pacman = "clamav" }
+
+[[tool]]
+name = "systemd"
+binary = "systemctl"
+version = ["--version"]
+required = true
+feature = "Services, timers, cgroup freeze"
+packages = { apt = "systemd", dnf = "systemd", zypper = "systemd", pacman = "systemd" }
+
+[[tool]]
+name = "polkit"
+binary = "pkaction"
+version = ["--version"]
+required = true
+feature = "Authorization for every privileged action"
+packages = { apt = "polkitd", dnf = "polkit", zypper = "polkit", pacman = "polkit" }
+
+[[tool]]
+name = "dbus"
+binary = "busctl"
+version = ["--version"]
+required = true
+feature = "IPC between the app and the daemon"
+packages = { apt = "dbus", dnf = "dbus", zypper = "dbus-1", pacman = "dbus" }
+
+[[tool]]
+name = "ss"
+binary = "ss"
+version = ["-V"]
+required = false
+feature = "Active connections and dropping connections"
+packages = { apt = "iproute2", dnf = "iproute", zypper = "iproute2", pacman = "iproute2" }
+
+[[tool]]
+name = "opensnitchd"
+binary = "opensnitchd"
+version = ["-version"]
+required = false
+feature = "Per-app network blocking"
+service = "opensnitch.service"
+packages = { apt = "opensnitch", dnf = "opensnitch", zypper = "opensnitch", pacman = "opensnitch" }
+
+[[tool]]
+name = "udisks2"
+binary = "udisksctl"
+version = []
+required = false
+feature = "Detect USB drives for auto-scan"
+packages = { apt = "udisks2", dnf = "udisks2", zypper = "udisks2", pacman = "udisks2" }
+
+[[tool]]
+name = "upower"
+binary = "upower"
+version = ["--version"]
+required = false
+feature = "Skip scheduled scans on battery"
+packages = { apt = "upower", dnf = "upower", zypper = "upower", pacman = "upower" }
+
+[[tool]]
+name = "fangfrisch"
+binary = "fangfrisch"
+version = []
+required = false
+feature = "Extra free signature feeds"
+packages = { apt = "fangfrisch", dnf = "python3-fangfrisch", zypper = "fangfrisch", pacman = "fangfrisch" }
+hint = "Not packaged everywhere: pip install --user fangfrisch, or whichever way you install Python tools"
+
+[[tool]]
+name = "rkhunter"
+binary = "rkhunter"
+version = ["--version"]
+required = false
+feature = "Rootkit check"
+packages = { apt = "rkhunter", dnf = "rkhunter", zypper = "rkhunter", pacman = "rkhunter" }
+
+[[tool]]
+name = "chkrootkit"
+binary = "chkrootkit"
+version = ["-V"]
+required = false
+feature = "Rootkit check"
+packages = { apt = "chkrootkit", dnf = "chkrootkit", zypper = "chkrootkit", pacman = "chkrootkit" }
+
+[[tool]]
+name = "lynis"
+binary = "lynis"
+version = ["--version"]
+required = false
+feature = "System hardening audit"
+packages = { apt = "lynis", dnf = "lynis", zypper = "lynis", pacman = "lynis" }
+
+[[tool]]
+name = "debsums"
+binary = "debsums"
+version = []
+required = false
+feature = "Package file integrity check (Debian, Ubuntu)"
+only = ["apt"]
+packages = { apt = "debsums" }
+
+[[tool]]
+name = "rpm"
+binary = "rpm"
+version = ["--version"]
+required = false
+feature = "Package file integrity check (rpm -Va)"
+only = ["dnf", "zypper"]
+packages = { dnf = "rpm", zypper = "rpm" }
+
+[[tool]]
+name = "snapper"
+binary = "snapper"
+version = ["--version"]
+required = false
+feature = "List snapshots for recovery after a ransomware event"
+packages = { apt = "snapper", dnf = "snapper", zypper = "snapper", pacman = "snapper" }
+
+[[tool]]
+name = "btrfs"
+binary = "btrfs"
+version = ["--version"]
+required = false
+feature = "List btrfs snapshots for recovery"
+packages = { apt = "btrfs-progs", dnf = "btrfs-progs", zypper = "btrfsprogs", pacman = "btrfs-progs" }
+
+[[tool]]
+name = "zfs"
+binary = "zfs"
+version = ["version"]
+required = false
+feature = "List ZFS snapshots for recovery"
+packages = { apt = "zfsutils-linux", dnf = "zfs", zypper = "zfs", pacman = "zfs-utils" }
+
+[[tool]]
+name = "openssl"
+binary = "openssl"
+version = ["version"]
+required = false
+feature = "Ransomware shield self-test"
+packages = { apt = "openssl", dnf = "openssl", zypper = "openssl", pacman = "openssl" }

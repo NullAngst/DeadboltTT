@@ -1,0 +1,40 @@
+[package]
+name = "deadboltd"
+description = "Deadbolt root daemon: drives clamd, the ransomware shield, quarantine and OpenSnitch over D-Bus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "deadboltd"
+path = "src/main.rs"
+
+[[bin]]
+name = "deadbolt-virusevent"
+path = "src/bin/virusevent.rs"
+
+[dependencies]
+deadbolt-common = { path = "../deadbolt-common" }
+deadbolt-shield = { path = "../deadbolt-shield" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+uuid.workspace = true
+time.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio.workspace = true
+zbus.workspace = true
+nix.workspace = true
+libc.workspace = true
+regex.workspace = true
+rusqlite.workspace = true
+sha2.workspace = true
+hex.workspace = true
+futures-util.workspace = true

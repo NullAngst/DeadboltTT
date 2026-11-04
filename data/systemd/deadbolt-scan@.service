@@ -1,0 +1,14 @@
+[Unit]
+Description=Deadbolt scheduled %i scan
+Documentation=https://github.com/NullAngst/DeadboltTT
+Requires=deadboltd.service
+After=deadboltd.service
+
+[Service]
+Type=oneshot
+# The daemon applies the "scheduled scan" action from Settings.
+ExecStart=deadboltctl scan --profile %i --scheduled
+Nice=10
+IOSchedulingClass=idle
+# 1 means threats were found, which is a successful scan.
+SuccessExitStatus=1

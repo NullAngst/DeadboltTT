@@ -1,0 +1,13 @@
+[Unit]
+Description=Deadbolt scheduled %i scan
+Documentation=https://github.com/NullAngst/DeadboltTT
+
+[Timer]
+# Overridden per profile by /etc/systemd/system/deadbolt-scan@<profile>.timer.d/schedule.conf,
+# which Deadbolt writes from Settings.
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

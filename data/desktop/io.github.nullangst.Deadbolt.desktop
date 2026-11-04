@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Deadbolt
+GenericName=Anti-Malware
+Comment=Scan for malware, stop ransomware, block apps from the network
+Exec=deadbolt %F
+Icon=deadbolt
+Terminal=false
+Categories=System;Security;Qt;
+Keywords=antivirus;malware;clamav;ransomware;firewall;quarantine;
+StartupNotify=true
+StartupWMClass=deadbolt

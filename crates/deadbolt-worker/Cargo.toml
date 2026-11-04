@@ -1,0 +1,26 @@
+[package]
+name = "deadbolt-worker"
+description = "Deadbolt file worker: scans, quarantine moves, restores, canaries"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+deadbolt-common = { path = "../deadbolt-common" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+rand.workspace = true
+uuid.workspace = true
+walkdir.workspace = true
+regex.workspace = true
+nix.workspace = true
+libc.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

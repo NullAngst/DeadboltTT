@@ -1,0 +1,50 @@
+[Unit]
+Description=Deadbolt anti-malware daemon
+Documentation=https://github.com/NullAngst/DeadboltTT
+After=dbus.service polkit.service local-fs.target
+Wants=deadbolt-worker.service
+
+[Service]
+Type=dbus
+BusName=io.github.nullangst.Deadbolt1
+ExecStart=/usr/libexec/deadbolt/deadboltd
+Restart=on-failure
+RestartSec=2
+
+RuntimeDirectory=deadbolt
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+
+# Exactly these: fanotify, file handles for event paths, freeze and kill,
+# and reading /proc/<pid>/exe of other users' processes.
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_READ_SEARCH CAP_KILL CAP_SYS_PTRACE
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+# The leading "-" lets the unit start when an optional path does not exist.
+ReadWritePaths=/var/lib/deadbolt /var/log/deadbolt /etc/deadbolt /sys/fs/cgroup
+ReadWritePaths=-/etc/opensnitchd/rules -/etc/opensnitchd/default-config.json
+ReadWritePaths=-/etc/systemd/system/deadbolt-scan@quick.timer.d -/etc/systemd/system/deadbolt-scan@home.timer.d
+ReadWritePaths=-/etc/systemd/system/deadbolt-scan@full.timer.d -/etc/systemd/system/deadbolt-scan@custom.timer.d
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+PrivateDevices=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service fanotify_init fanotify_mark open_by_handle_at
+SystemCallErrorNumber=EPERM
+# No network at all. AF_NETLINK is for ss's socket diagnostics.
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+IPAddressDeny=any
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

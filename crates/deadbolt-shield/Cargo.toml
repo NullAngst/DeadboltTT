@@ -1,0 +1,24 @@
+[package]
+name = "deadbolt-shield"
+description = "Ransomware behavior monitor for Deadbolt: fanotify watch, scoring, freeze"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+deadbolt-common = { path = "../deadbolt-common" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+libc.workspace = true
+nix.workspace = true
+infer.workspace = true
+tracing.workspace = true
+uuid.workspace = true

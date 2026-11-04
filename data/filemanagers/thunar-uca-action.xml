@@ -1,0 +1,18 @@
+<!-- The action Deadbolt adds to ~/.config/Thunar/uca.xml on first run, after asking.
+     The GUI edits uca.xml with an XML parser and adds only this entry. -->
+<action>
+	<icon>deadbolt</icon>
+	<name>Scan with Deadbolt</name>
+	<submenu></submenu>
+	<unique-id>deadbolt-scan-1</unique-id>
+	<command>deadbolt --scan %F</command>
+	<description>Scan the selected files and folders for threats</description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>

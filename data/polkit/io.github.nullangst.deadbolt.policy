@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Deadbolt</vendor>
+  <vendor_url>https://github.com/NullAngst/DeadboltTT</vendor_url>
+  <icon_name>deadbolt</icon_name>
+
+  <action id="io.github.nullangst.deadbolt.scan">
+    <description>Scan files you can read</description>
+    <message>Deadbolt wants to scan files.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.scan-system">
+    <description>Scan files you cannot read</description>
+    <message>Authentication is required to scan system files or other users' files.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.quarantine-manage">
+    <description>List, restore or delete quarantined files</description>
+    <message>Authentication is required to manage quarantined files.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.shield-decide">
+    <description>Kill or release a frozen app you own</description>
+    <message>Deadbolt wants to act on a frozen app.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.shield-decide-other">
+    <description>Kill or release another user's or a system process</description>
+    <message>Authentication is required to act on a process you do not own.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.settings">
+    <description>Change Deadbolt settings, exclusions and the allowlist</description>
+    <message>Authentication is required to change Deadbolt settings.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.network">
+    <description>Block or unblock apps from the network</description>
+    <message>Authentication is required to change network blocking.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="io.github.nullangst.deadbolt.protection-toggle">
+    <description>Pause or turn off protection</description>
+    <message>Authentication is required to pause or turn off protection.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

@@ -1,0 +1,8 @@
+[Unit]
+Description=Delete Deadbolt quarantine items older than the configured age
+Requires=deadboltd.service
+After=deadboltd.service
+
+[Service]
+Type=oneshot
+ExecStart=deadboltctl quarantine purge --auto

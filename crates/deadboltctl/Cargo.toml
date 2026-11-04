@@ -1,0 +1,18 @@
+[package]
+name = "deadboltctl"
+description = "Command-line control for Deadbolt, for scripts, cron and servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+deadbolt-common = { path = "../deadbolt-common" }
+deadbolt-client = { path = "../deadbolt-client" }
+clap.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+time.workspace = true

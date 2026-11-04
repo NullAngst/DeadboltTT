@@ -1,0 +1,32 @@
+[Unit]
+Description=Deadbolt's clamd (ClamAV scan engine with Deadbolt's config)
+Documentation=man:clamd(8) https://github.com/NullAngst/DeadboltTT
+After=local-fs.target
+ConditionPathExists=/etc/deadbolt/clamd.conf
+
+[Service]
+Type=simple
+User=clamav
+Group=clamav
+# Bare name: systemd looks it up on its default PATH, so /usr/sbin vs /usr/bin does not matter.
+ExecStart=clamd --foreground -c /etc/deadbolt/clamd.conf
+ExecReload=kill -USR2 $MAINPID
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=deadbolt-clamd
+RuntimeDirectoryMode=0750
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/run/deadbolt-clamd
+ReadOnlyPaths=/var/lib/clamav
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+RestrictRealtime=yes
+
+[Install]
+WantedBy=multi-user.target
