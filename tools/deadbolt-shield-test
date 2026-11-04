@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# deadbolt-shield-test: a harmless ransomware simulator for checking that the
+# Deadbolt shield freezes mass encryption. It only touches files it creates in
+# its own temp folder, and it deletes that folder when it ends.
+#
+# What it does: makes 200 dummy files (text, CSV, JPEG and DOCX headers), then
+# encrypts each one in place with openssl and renames it with a .locked suffix,
+# the same pattern real ransomware leaves. The shield should freeze it long
+# before it gets through all 200.
+#
+# Exit codes: 0 all 200 done (the shield did NOT stop it), 3 stopped early
+# (failed mid-run), 2 setup error. A Kill from the shield ends it with
+# SIGKILL, so the EXIT trap cannot run: deadboltctl test shield and the GUI
+# remove the leftover .deadbolt-shield-test.* folder afterwards.
+
+set -euo pipefail
+
+LC_ALL=C
+export LC_ALL
+
+missing=()
+for cmd in openssl mktemp mv rm head printf; do
+    command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+    printf 'deadbolt-shield-test: missing commands: %s\n' "${missing[*]}" >&2
+    exit 2
+fi
+
+# The shield watches /home, /srv and /mnt. Use a folder under one of them.
+base="${DEADBOLT_TEST_DIR:-}"
+if [ -z "$base" ]; then
+    case "${HOME:-}" in
+        /home/*) base="$HOME" ;;
+        *) base="/srv" ;;
+    esac
+fi
+if [ ! -d "$base" ] || [ ! -w "$base" ]; then
+    printf 'deadbolt-shield-test: %s is not a writable folder; set DEADBOLT_TEST_DIR to one under /home, /srv or /mnt\n' "$base" >&2
+    exit 2
+fi
+
+work="$(mktemp -d "$base/.deadbolt-shield-test.XXXXXX")"
+stage="$(mktemp -d "${TMPDIR:-/tmp}/deadbolt-shield-stage.XXXXXX")"
+trap 'rm -rf -- "$work" "$stage"' EXIT
+
+count=200
+i=0
+while [ "$i" -lt "$count" ]; do
+    case $((i % 4)) in
+        0) name="report-$i.txt"
+           j=0
+           : >"$work/$name"
+           while [ "$j" -lt 60 ]; do
+               printf 'Quarterly notes, line %s of file %s. Nothing important here.\n' "$j" "$i" >>"$work/$name"
+               j=$((j + 1))
+           done ;;
+        1) name="ledger-$i.csv"
+           j=0
+           printf 'date,item,amount\n' >"$work/$name"
+           while [ "$j" -lt 120 ]; do
+               printf '2026-01-%02d,coffee,%s\n' "$((j % 28 + 1))" "$j" >>"$work/$name"
+               j=$((j + 1))
+           done ;;
+        2) name="photo-$i.jpg"
+           printf '\377\330\377\340\000\020JFIF\000' >"$work/$name"
+           head -c 4000 /dev/zero >>"$work/$name" ;;
+        3) name="letter-$i.docx"
+           printf 'PK\003\004' >"$work/$name"
+           head -c 4000 /dev/zero >>"$work/$name" ;;
+    esac
+    i=$((i + 1))
+done
+printf 'deadbolt-shield-test: created %s dummy files in %s\n' "$count" "$work"
+
+done_count=0
+for f in "$work"/*; do
+    name="${f##*/}"
+    # Plain copy to the unwatched staging folder, then openssl writes the
+    # encrypted bytes back over the original name.
+    cp -- "$f" "$stage/$name"
+    if ! openssl enc -aes-256-cbc -pbkdf2 -salt -pass pass:deadbolt-shield-test \
+        -in "$stage/$name" -out "$f" 2>/dev/null; then
+        printf 'deadbolt-shield-test: stopped after %s files\n' "$done_count" >&2
+        exit 3
+    fi
+    if ! mv -- "$f" "$f.locked"; then
+        printf 'deadbolt-shield-test: stopped after %s files\n' "$done_count" >&2
+        exit 3
+    fi
+    rm -f -- "$stage/$name"
+    done_count=$((done_count + 1))
+done
+
+printf 'deadbolt-shield-test: finished all %s files without being stopped. The shield did not trip.\n' "$done_count"
+exit 0

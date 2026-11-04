@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# debconf config script. The only question is asked at purge time, so
+# there is nothing to pre-ask here.
+set -euo pipefail
+exit 0

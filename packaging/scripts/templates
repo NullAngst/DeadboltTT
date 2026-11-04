@@ -1,0 +1,9 @@
+Template: deadbolt/purge-quarantine
+Type: boolean
+Default: false
+Description: Delete the quarantine folder too?
+ Purging Deadbolt removes its settings, history, incident records and logs.
+ The quarantine folder, /var/lib/deadbolt/quarantine, holds files Deadbolt
+ moved out of the way. They are stored scrambled and cannot run.
+ .
+ Say no to keep them, for example if you might restore one later.

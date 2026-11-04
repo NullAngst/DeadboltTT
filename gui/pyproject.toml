@@ -1,0 +1,33 @@
+[project]
+name = "deadbolt-gui"
+version = "0.1.0"
+description = "Deadbolt: Track and Terminate, the desktop app"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.11"
+# PyQt6 comes from the distro (python3-pyqt6) so Qt matches the Plasma it runs under.
+dependencies = ["PyQt6>=6.4"]
+
+[project.scripts]
+deadbolt = "deadbolt_gui.app:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["deadbolt_gui"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "S", "SIM", "RUF"]
+# S603/S607: subprocess with an argument vector is the rule here, never a shell.
+ignore = ["S603", "S607", "RUF001", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S314"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

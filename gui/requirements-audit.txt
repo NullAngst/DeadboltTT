@@ -1,0 +1,3 @@
+# What the GUI imports. The packages install the distro build of PyQt6;
+# this file only exists so pip-audit can check PyQt6 against known advisories.
+PyQt6

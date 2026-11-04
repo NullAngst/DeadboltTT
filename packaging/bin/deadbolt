@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""Launcher for the Deadbolt GUI. The package lives in /usr/share/deadbolt/gui
+so it does not depend on which site-packages path a distro uses."""
+
+import sys
+
+sys.path.insert(0, "/usr/share/deadbolt/gui")
+
+from deadbolt_gui.app import main  # noqa: E402
+
+main()

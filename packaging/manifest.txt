@@ -1,0 +1,39 @@
+# Every file Deadbolt installs. One source of truth for install.sh,
+# uninstall.sh and the .deb/.rpm builds (packaging/build-packages.sh).
+#
+# kind  package  mode  source                                         destination
+# package: all = deadbolt and deadbolt-server, gui = deadbolt only
+file all 0755 target/release/deadboltd                          /usr/libexec/deadbolt/deadboltd
+file all 0755 target/release/deadbolt-worker                    /usr/libexec/deadbolt/deadbolt-worker
+file all 0755 target/release/deadbolt-virusevent                /usr/libexec/deadbolt/virusevent
+file all 0755 target/release/deadboltctl                        /usr/bin/deadboltctl
+file all 0755 target/release/deadbolt-tui                       /usr/bin/deadbolt-tui
+file all 0644 data/systemd/deadboltd.service                    /usr/lib/systemd/system/deadboltd.service
+file all 0644 data/systemd/deadbolt-worker.service              /usr/lib/systemd/system/deadbolt-worker.service
+file all 0644 data/systemd/deadbolt-clamd.service               /usr/lib/systemd/system/deadbolt-clamd.service
+file all 0644 data/systemd/deadbolt-clamonacc.service           /usr/lib/systemd/system/deadbolt-clamonacc.service
+file all 0644 data/systemd/deadbolt-scan@.service               /usr/lib/systemd/system/deadbolt-scan@.service
+file all 0644 data/systemd/deadbolt-scan@.timer                 /usr/lib/systemd/system/deadbolt-scan@.timer
+file all 0644 data/systemd/deadbolt-quarantine-purge.service    /usr/lib/systemd/system/deadbolt-quarantine-purge.service
+file all 0644 data/systemd/deadbolt-quarantine-purge.timer      /usr/lib/systemd/system/deadbolt-quarantine-purge.timer
+file all 0644 data/systemd/var-lib-deadbolt-quarantine.mount    /usr/lib/systemd/system/var-lib-deadbolt-quarantine.mount
+file all 0644 data/polkit/io.github.nullangst.deadbolt.policy   /usr/share/polkit-1/actions/io.github.nullangst.deadbolt.policy
+file all 0644 data/dbus/io.github.nullangst.Deadbolt1.conf      /usr/share/dbus-1/system.d/io.github.nullangst.Deadbolt1.conf
+file all 0644 data/sysctl/60-deadbolt.conf                      /usr/lib/sysctl.d/60-deadbolt.conf
+file all 0644 data/sysusers/deadbolt.conf                       /usr/lib/sysusers.d/deadbolt.conf
+file all 0644 data/tmpfiles/deadbolt.conf                       /usr/lib/tmpfiles.d/deadbolt.conf
+file all 0644 data/packages.toml                                /usr/share/deadbolt/packages.toml
+file all 0644 data/user-data-extensions.txt                     /usr/share/deadbolt/user-data-extensions.txt
+file all 0755 tools/deadbolt-shield-test                        /usr/share/deadbolt/tools/deadbolt-shield-test
+file all 0644 LICENSE                                           /usr/share/doc/deadbolt/LICENSE
+file all 0644 README.md                                         /usr/share/doc/deadbolt/README.md
+file all 0644 docs/MONTHLY_REVIEW.md                            /usr/share/doc/deadbolt/MONTHLY_REVIEW.md
+file all 0644 docs/SECURITY.md                                  /usr/share/doc/deadbolt/SECURITY.md
+tree gui 0644 gui/deadbolt_gui                                  /usr/share/deadbolt/gui/deadbolt_gui
+file gui 0755 packaging/bin/deadbolt                            /usr/bin/deadbolt
+file gui 0644 data/desktop/io.github.nullangst.Deadbolt.desktop /usr/share/applications/io.github.nullangst.Deadbolt.desktop
+file gui 0644 data/desktop/deadbolt.svg                         /usr/share/icons/hicolor/scalable/apps/deadbolt.svg
+file gui 0644 data/desktop/deadbolt-autostart.desktop           /usr/share/deadbolt/deadbolt-autostart.desktop
+file gui 0644 data/filemanagers/deadbolt-scan.desktop           /usr/share/kio/servicemenus/deadbolt-scan.desktop
+file gui 0644 data/filemanagers/deadbolt.py                     /usr/share/nautilus-python/extensions/deadbolt.py
+file gui 0644 data/filemanagers/thunar-uca-action.xml           /usr/share/deadbolt/thunar-uca-action.xml

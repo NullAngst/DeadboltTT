@@ -1,0 +1,35 @@
+# cargo deny check: known-vulnerable or yanked crates, license changes,
+# and crates from anywhere but crates.io. Run in CI and by the monthly review.
+
+[graph]
+all-features = false
+
+[advisories]
+# Unmaintained crates are reported but do not fail the build; vulnerabilities do.
+unmaintained = "workspace"
+yanked = "deny"
+
+[licenses]
+# Everything here is compatible with shipping a GPL-3.0-or-later program.
+# Only licenses actually in the tree are listed; a new one fails the check on purpose.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "Zlib",
+    "Unicode-3.0",
+    "GPL-3.0-or-later",
+    "LGPL-2.1-or-later",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
