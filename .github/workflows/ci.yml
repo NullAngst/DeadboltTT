@@ -85,7 +85,7 @@ jobs:
       - name: nfpm
         run: |
           pipx install nfpm
-          packaging/build-packages.sh "0.0.0+ci.${GITHUB_RUN_NUMBER}"
+          bash packaging/build-packages.sh "0.0.0+ci.${GITHUB_RUN_NUMBER}"
       - uses: actions/upload-artifact@v4
         with:
           name: packages

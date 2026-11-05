@@ -34,7 +34,7 @@ jobs:
       - name: Packages
         run: |
           pipx install nfpm
-          packaging/build-packages.sh "${GITHUB_REF_NAME}"
+          bash packaging/build-packages.sh "${GITHUB_REF_NAME}"
 
       - name: Source tarball
         run: |
