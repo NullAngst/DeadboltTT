@@ -52,10 +52,10 @@ The package installs files and starts the daemon, but it turns no protection on 
 1. Install Rust (the current stable toolchain, `rustup` is easiest) and the prerequisites above.
 2. Clone the repo: `git clone https://github.com/NullAngst/DeadboltTT && cd DeadboltTT`
 3. Build as yourself: `cargo build --release`, since building as root leaves root-owned files in your checkout.
-4. Install: `sudo packaging/install.sh`, or `sudo packaging/install.sh --server` for a headless box.
+4. Install: `sudo bash packaging/install.sh`, or `sudo bash packaging/install.sh --server` for a headless box. Run it through `bash` since a GitHub web upload or a zip download can drop the execute bit.
 5. Run the wizard: open Deadbolt from the app menu, or `sudo deadboltctl setup` on a server.
 
-To remove a source install, `sudo packaging/uninstall.sh`. Add `--purge` to also remove settings, history and logs. It asks before it touches the quarantine folder.
+To remove a source install, `sudo bash packaging/uninstall.sh`. Add `--purge` to also remove settings, history and logs. It asks before it touches the quarantine folder.
 
 Immutable distros (Silverblue, Kinoite, SteamOS) and containers are out of scope for v1. The daemon refuses to start inside a container and says why, since fanotify and cgroup freezing behave differently there.
 
@@ -174,7 +174,7 @@ Runtime sockets: the daemon's event socket is `/run/deadbolt/events.sock`, clamd
 
 Packages: your package manager updates Deadbolt like anything else. ClamAV and OpenSnitch update with your distro. Signatures update through freshclam, and the dashboard warns when they're three days stale.
 
-Source installs: `git pull`, `cargo build --release`, `sudo packaging/install.sh`. The install step restarts the daemon so the new binaries take over.
+Source installs: `git pull`, `cargo build --release`, `sudo bash packaging/install.sh`. The install step restarts the daemon so the new binaries take over.
 
 Maintenance, monthly review and changelog: `maintenance.md`, `docs/MONTHLY_REVIEW.md`, `changes.md`.
 

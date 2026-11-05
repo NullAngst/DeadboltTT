@@ -5,7 +5,7 @@
 # commit the report.
 #
 #   cd DeadboltTT
-#   ./scripts/monthly-review.sh
+#   bash scripts/monthly-review.sh
 set -euo pipefail
 
 LC_ALL=C

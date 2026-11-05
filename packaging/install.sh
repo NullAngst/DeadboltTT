@@ -2,8 +2,8 @@
 # Install Deadbolt from source, for distros without a .deb or .rpm.
 #
 #   cargo build --release          # as yourself, in the repo root
-#   sudo packaging/install.sh      # full desktop install
-#   sudo packaging/install.sh --server   # daemon, TUI and CLI only
+#   sudo bash packaging/install.sh      # full desktop install
+#   sudo bash packaging/install.sh --server   # daemon, TUI and CLI only
 #
 # It copies the files listed in packaging/manifest.txt and runs the same
 # post-install step the packages run. It does not install ClamAV or any
@@ -24,14 +24,14 @@ for arg in "$@"; do
     case "$arg" in
         --server) server=1 ;;
         -h|--help)
-            printf 'usage: sudo packaging/install.sh [--server]\n'
+            printf 'usage: sudo bash packaging/install.sh [--server]\n'
             exit 0
             ;;
         *) die "unknown option: $arg" ;;
     esac
 done
 
-[ "$(id -u)" -eq 0 ] || die "run as root: sudo packaging/install.sh"
+[ "$(id -u)" -eq 0 ] || die "run as root: sudo bash packaging/install.sh"
 
 missing=()
 for cmd in systemctl cp mkdir chmod find rm id; do
@@ -94,5 +94,5 @@ while read -r kind pkg mode src dst; do
 done <packaging/manifest.txt
 
 printf 'install.sh: copied %s files\n' "$copied"
-packaging/scripts/postinstall.sh configure
+bash packaging/scripts/postinstall.sh configure
 printf 'install.sh: done. Open Deadbolt from your app menu, or run "sudo deadboltctl setup" on a server.\n'

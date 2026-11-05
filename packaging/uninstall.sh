@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Remove a source install of Deadbolt (one made with packaging/install.sh).
 #
-#   sudo packaging/uninstall.sh          # keep settings, history and quarantine
-#   sudo packaging/uninstall.sh --purge  # remove those too, asks about quarantine
+#   sudo bash packaging/uninstall.sh          # keep settings, history and quarantine
+#   sudo bash packaging/uninstall.sh --purge  # remove those too, asks about quarantine
 #
 # For a .deb or .rpm install, use your package manager instead.
 set -euo pipefail
@@ -20,14 +20,14 @@ for arg in "$@"; do
     case "$arg" in
         --purge) purge=1 ;;
         -h|--help)
-            printf 'usage: sudo packaging/uninstall.sh [--purge]\n'
+            printf 'usage: sudo bash packaging/uninstall.sh [--purge]\n'
             exit 0
             ;;
         *) die "unknown option: $arg" ;;
     esac
 done
 
-[ "$(id -u)" -eq 0 ] || die "run as root: sudo packaging/uninstall.sh"
+[ "$(id -u)" -eq 0 ] || die "run as root: sudo bash packaging/uninstall.sh"
 for cmd in rm id dirname; do
     command -v "$cmd" >/dev/null 2>&1 || die "missing command: $cmd"
 done
@@ -35,7 +35,7 @@ done
 root="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 cd -- "$root" || exit 1
 
-packaging/scripts/preremove.sh remove
+bash packaging/scripts/preremove.sh remove
 
 # Fields are split on whitespace; the manifest has no spaces in paths.
 while read -r kind _pkg _mode _src dst; do

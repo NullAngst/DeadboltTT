@@ -1,6 +1,6 @@
 # Monthly Security and Code Review
 
-Once a month, about an hour. `scripts/monthly-review.sh` runs the automatic parts and writes a dated report skeleton to `docs/reviews/YYYY-MM.md`. You fill in the manual parts and commit the report.
+Once a month, about an hour. `bash scripts/monthly-review.sh` runs the automatic parts and writes a dated report skeleton to `docs/reviews/YYYY-MM.md`. You fill in the manual parts and commit the report.
 
 Why every month? Because an anti-malware tool that isn't current is worse than none: it tells you you're safe when you aren't. ClamAV alone has shipped batches of parser CVE fixes this year, and a root daemon with old crates is a liability.
 
@@ -10,7 +10,7 @@ Start by reading last month's report. Its Open list is the first thing on this m
 
 ```
 cd DeadboltTT
-./scripts/monthly-review.sh
+bash scripts/monthly-review.sh
 ```
 
 It runs and records:

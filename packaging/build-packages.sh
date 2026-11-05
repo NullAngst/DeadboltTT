@@ -3,8 +3,10 @@
 # from packaging/manifest.txt. Run from the repo root after
 # "cargo build --release". GitHub Actions runs this on every v* tag.
 #
-#   packaging/build-packages.sh 0.1.0            # version
-#   ARCH=arm64 packaging/build-packages.sh 0.1.0 # other architecture
+#   bash packaging/build-packages.sh 0.1.0            # version
+#   ARCH=arm64 bash packaging/build-packages.sh 0.1.0 # other architecture
+#
+# Called through bash on purpose: GitHub web uploads drop the execute bit.
 set -euo pipefail
 
 LC_ALL=C
@@ -24,7 +26,7 @@ if [ "${#missing[@]}" -gt 0 ]; then
 fi
 
 version="${1:-}"
-[ -n "$version" ] || die "usage: packaging/build-packages.sh VERSION"
+[ -n "$version" ] || die "usage: bash packaging/build-packages.sh VERSION"
 version="${version#v}"
 arch="${ARCH:-amd64}"
 out="${OUT_DIR:-dist}"
