@@ -624,6 +624,24 @@ async fn run(cli: Cli) -> Result<i32, ClientError> {
             log.push(json!({"step": "schedules", "result": c.setup_step("schedules").await?}));
             log.push(json!({"step": "done", "result": c.setup_step("done").await?}));
             let st = c.status().await?;
+            if matches!(st.level, Level::Red) && !out.json {
+                // Say what is wrong, so a log shows more than the banner line.
+                let r = c.requirements(false).await?;
+                for row in r.rows.iter().filter(|r| r.required) {
+                    if !row.installed {
+                        eprintln!("setup: {} is missing ({})", row.tool, row.feature);
+                    } else if row.running == Some(false) {
+                        eprintln!(
+                            "setup: {} is installed but its service is not running",
+                            row.tool
+                        );
+                    }
+                }
+                if !st.realtime.running && st.realtime.enabled {
+                    eprintln!("setup: real-time scanning (deadbolt-clamonacc) is not running");
+                }
+                eprintln!("setup: run deadboltctl doctor for the full list");
+            }
             out.print(
                 format!("Setup finished. {}", st.reason),
                 json!({"steps": log, "status": st}),

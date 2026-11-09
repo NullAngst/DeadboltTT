@@ -1176,6 +1176,9 @@ impl App {
                 }
                 self.save_persist();
                 self.history.log("setup", "First-run setup finished", "");
+                // The report cached by the "kernel" step predates the "clamd" step,
+                // so it still lists deadbolt-clamd and deadbolt-clamonacc as stopped.
+                self.refresh_requirements().await;
                 self.status_changed().await;
                 Ok(json!({"done": true}))
             }

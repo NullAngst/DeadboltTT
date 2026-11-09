@@ -2,6 +2,14 @@
 
 2026.11.09 - Bug fix
 
+* The "done" setup step refreshes the system requirements report before setup reports status
+* `deadboltctl setup` lists which required tools are missing or stopped when it ends red, and points to `deadboltctl doctor`
+* The CI "Logs on failure" step runs `deadboltctl doctor` and `systemctl status` on Deadbolt's units before dumping the journal
+
+Reasons for changes: with the socket fixed, the integration job got through every setup step and still ended with "Missing required packages or services". The requirements report is cached by the first setup step, "kernel", which runs before the "clamd" step starts deadbolt-clamd and deadbolt-clamonacc. Both units were recorded as stopped, and nothing refreshed the cache until a package change or a daemon restart, so a correct setup always ended red. The extra output is so the next failure says what is actually wrong instead of one banner line.
+
+2026.11.09 - Bug fix
+
 * `deadbolt-worker` hands its socket to the peer uid (root) after binding, still mode 0600
 * The worker exits with an error if the chmod or chown on its socket fails, instead of ignoring it
 * `docs/SECURITY.md` states the socket's owner and mode
