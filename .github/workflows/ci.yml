@@ -193,4 +193,6 @@ jobs:
       - name: Logs on failure
         if: failure()
         run: |
+          sudo deadboltctl doctor || true
+          sudo systemctl status deadboltd deadbolt-worker deadbolt-clamd deadbolt-clamonacc --no-pager || true
           sudo journalctl -u deadboltd -u deadbolt-worker -u deadbolt-clamd -u deadbolt-clamonacc --no-pager | tail -200
