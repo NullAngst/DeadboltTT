@@ -1,5 +1,13 @@
 # Changes
 
+2026.11.09 - Bug fix
+
+* `deadbolt-worker` hands its socket to the peer uid (root) after binding, still mode 0600
+* The worker exits with an error if the chmod or chown on its socket fails, instead of ignoring it
+* `docs/SECURITY.md` states the socket's owner and mode
+
+Reasons for changes: the integration job failed at `deadboltctl setup --yes` with "deadbolt-worker is not reachable: Permission denied (os error 13)". The worker created the socket as deadbolt-worker with mode 0600, and deadboltd runs as root without CAP_DAC_OVERRIDE, so root had no write permission on the socket and connect() failed. Owning the socket as root fixes that without giving the daemon any new capability. The socket stays root-only, and the worker still checks the peer uid.
+
 2026.11.05 - Build fix
 
 * CI and release workflows call `bash packaging/build-packages.sh` instead of running it directly

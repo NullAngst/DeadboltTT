@@ -196,7 +196,26 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let _ = std::fs::set_permissions(&cfg.socket, std::fs::Permissions::from_mode(0o600));
+    // The daemon runs as root without CAP_DAC_OVERRIDE, so it can only connect
+    // if the socket belongs to it. Hand the socket to the peer uid (root in
+    // production) and keep it 0600, so only that uid can connect at all.
+    // CAP_CHOWN covers the chown. The 0700 folder stays ours; the daemon
+    // gets through it with CAP_DAC_READ_SEARCH.
+    if let Err(e) = std::fs::set_permissions(&cfg.socket, std::fs::Permissions::from_mode(0o600)) {
+        eprintln!(
+            "deadbolt-worker: cannot chmod {}: {e}",
+            cfg.socket.display()
+        );
+        std::process::exit(2);
+    }
+    if let Err(e) = std::os::unix::fs::chown(&cfg.socket, Some(cfg.peer_uid), None) {
+        eprintln!(
+            "deadbolt-worker: cannot give {} to uid {}: {e}",
+            cfg.socket.display(),
+            cfg.peer_uid
+        );
+        std::process::exit(2);
+    }
     tracing::info!("listening on {}", cfg.socket.display());
     for conn in listener.incoming() {
         let Ok(stream) = conn else { continue };
