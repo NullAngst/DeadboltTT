@@ -111,6 +111,20 @@ pub fn ignored(path: &str, cfg: &Config) -> bool {
     false
 }
 
+/// The user-data extension a written file counts under. The descriptor's
+/// path is read after the event, so a writer that renames right after closing
+/// ("a.docx" then "a.docx.locked") is often already seen under the new name.
+/// The extension before an appended suffix still counts.
+pub fn user_ext(path: &str, ud: &UserData) -> Option<String> {
+    let ext = userdata::extension(path)?;
+    if ud.contains(&ext) {
+        return Some(ext);
+    }
+    let inner = path.strip_suffix(&format!(".{ext}"))?;
+    let ext = userdata::extension(inner)?;
+    ud.contains(&ext).then_some(ext)
+}
+
 fn watched(path: &str, cfg: &Config) -> bool {
     cfg.watch_paths
         .iter()
@@ -142,6 +156,11 @@ pub fn unescape_mount(s: &str) -> String {
 pub struct Mount {
     pub point: String,
     pub fstype: String,
+    /// The filesystem itself is read-only (superblock options). A read-only
+    /// bind of a writable filesystem does not count: deadboltd's own
+    /// ProtectSystem=strict and ProtectHome=read-only make / and /home look
+    /// like that from inside its namespace, and a FAN_MARK_FILESYSTEM mark
+    /// still sees every write made through the writable mounts.
     pub ro: bool,
 }
 
@@ -152,11 +171,11 @@ pub fn parse_mountinfo(text: &str) -> Vec<Mount> {
             let lf: Vec<&str> = left.split(' ').collect();
             let rf: Vec<&str> = right.split(' ').collect();
             let point = unescape_mount(lf.get(4)?);
-            let opts = lf.get(5)?;
+            let super_opts = rf.get(2)?;
             Some(Mount {
                 point,
                 fstype: rf.first()?.to_string(),
-                ro: opts.split(',').any(|o| o == "ro"),
+                ro: super_opts.split(',').any(|o| o == "ro"),
             })
         })
         .collect()
@@ -517,12 +536,9 @@ impl Monitor {
         let obs = if canary {
             Obs::Canary { path }
         } else {
-            let Some(ext) = userdata::extension(&path) else {
+            let Some(ext) = user_ext(&path, &self.sh.userdata) else {
                 return;
             };
-            if !self.sh.userdata.contains(&ext) {
-                return;
-            }
             let file = File::from(fd);
             let (head, all) = sample(&file);
             Obs::Content {
@@ -731,6 +747,38 @@ mod tests {
         assert!(watched("/home/u/a", &c));
         assert!(!watched("/homeless/a", &c));
         assert!(!watched("/usr/bin/x", &c));
+    }
+
+    #[test]
+    fn appended_suffix_keeps_type() {
+        let ud = UserData::builtin();
+        assert_eq!(user_ext("/srv/x/a.docx", &ud).as_deref(), Some("docx"));
+        assert_eq!(
+            user_ext("/srv/x/a.docx.locked", &ud).as_deref(),
+            Some("docx")
+        );
+        assert_eq!(
+            user_ext("/srv/x/report-1.txt.locked", &ud).as_deref(),
+            Some("txt")
+        );
+        assert_eq!(user_ext("/srv/x/a.locked", &ud), None);
+        assert_eq!(user_ext("/srv/x/locked", &ud), None);
+    }
+
+    #[test]
+    fn sandboxed_ro_bind_is_still_marked() {
+        // What deadboltd sees under ProtectSystem=strict: / is a read-only
+        // bind, the ext4 filesystem under it is writable.
+        let text = "\
+50 49 8:2 / / ro,relatime shared:1 - ext4 /dev/sda2 rw,discard
+51 50 8:3 / /home ro,relatime shared:2 - btrfs /dev/sda3 rw
+52 50 7:0 / /mnt/iso ro - iso9660 /dev/loop0 ro
+";
+        let m = parse_mountinfo(text);
+        assert!(!m[0].ro && !m[1].ro && m[2].ro);
+        let t = target_mounts(&m, &["/home".into(), "/srv".into(), "/mnt".into()]);
+        let pts: Vec<&str> = t.iter().map(|m| m.point.as_str()).collect();
+        assert_eq!(pts, vec!["/home", "/"]);
     }
 
     #[test]

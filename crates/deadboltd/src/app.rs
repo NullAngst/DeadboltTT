@@ -288,6 +288,13 @@ impl App {
                     .into(),
                 "requirements",
             )
+            } else if shield_running && marks.protected.is_empty() && s.shield.enabled {
+                (
+                    Level::Amber,
+                    "Attention needed: the ransomware shield is running but watching nothing."
+                        .into(),
+                    "shield",
+                )
             } else if !marks.unprotected.is_empty() && s.shield.enabled {
                 (
                     Level::Amber,

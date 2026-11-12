@@ -2,6 +2,15 @@
 
 2026.11.11 - Bug fix
 
+* The shield decides whether a filesystem is read-only from its superblock options in mountinfo, not the mount options
+* A written file whose name gained a suffix right after the write ("a.docx.locked") still counts under its original type
+* The status banner goes amber when the shield is running but watching no filesystems
+* `deadboltctl test shield` says which filesystems the shield is watching, and which it could not, when the test fails
+
+Reasons for changes: the integration job failed at "Shield freezes the simulator" with all 200 files encrypted and nothing frozen. deadboltd runs with ProtectSystem=strict and ProtectHome=read-only, so inside its own namespace / and /home are read-only binds of writable filesystems. The shield read the per-mount "ro" flag, skipped every mount that held /home, /srv and /mnt, and silently watched nothing. A filesystem-wide fanotify mark still sees writes made through the writable mounts outside the sandbox, so only a read-only superblock should be skipped. Reproduced with a read-only root namespace: the old code marked nothing and the simulator finished all 200 files; the new code marked / and froze the simulator's bash loop after about 20 files. The suffix fallback closes a race where the descriptor's path is read after mv has already renamed the file. Nothing on the dashboard showed the shield was blind, hence the new banner.
+
+2026.11.11 - Bug fix
+
 * `deadbolt-clamd.service` runs clamd under Deadbolt's own AppArmor profile, `deadbolt-clamd`, through `AppArmorProfile=-deadbolt-clamd`, and starts after `apparmor.service`
 * New profile `data/apparmor/deadbolt-clamd`, installed to `/etc/apparmor.d/deadbolt-clamd` as a config file (deb conffile, rpm noreplace), with `/etc/apparmor.d/local/deadbolt-clamd` for local additions
 * Post-install loads the profile before clamd is started or restarted; pre-remove unloads it. The distro's `/usr/sbin/clamd` profile is never edited

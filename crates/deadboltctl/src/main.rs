@@ -781,10 +781,26 @@ async fn test_shield(c: &Client, out: &Out, no_kill: bool) -> Result<i32, Client
     let inc = wait_for(&mut rx, 120, |s| s.member == "Incident").await;
     let Some(inc) = inc else {
         let _ = child.kill().await;
-        out.print(
-            "FAIL: the simulator was not frozen within two minutes.",
-            json!({"pass": false}),
-        );
+        // Say what the shield is watching, so a failure log shows more than one line.
+        let shield = c.status().await.ok().map(|st| st.shield);
+        let watching = match &shield {
+            Some(sh) if !sh.running => "the shield is not running".to_string(),
+            Some(sh) if sh.protected.is_empty() => {
+                "the shield is watching no filesystems".to_string()
+            }
+            Some(sh) => format!("the shield is watching {}", sh.protected.join(", ")),
+            None => "could not read the shield status".to_string(),
+        };
+        let unprotected = shield
+            .as_ref()
+            .map(|sh| sh.unprotected.join("; "))
+            .unwrap_or_default();
+        let mut human =
+            format!("FAIL: the simulator was not frozen within two minutes. {watching}.");
+        if !unprotected.is_empty() {
+            human.push_str(&format!(" Not watched: {unprotected}."));
+        }
+        out.print(human, json!({"pass": false, "shield": shield}));
         return Ok(exitcode::ERROR);
     };
     let incident: Incident =
