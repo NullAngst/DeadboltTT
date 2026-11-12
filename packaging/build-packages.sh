@@ -54,6 +54,9 @@ contents_for() {
         printf '  - src: %s\n    dst: %s\n' "$src" "$dst"
         if [ "$kind" = "tree" ]; then
             printf '    type: tree\n'
+        elif [ "$kind" = "config" ]; then
+            # deb conffile, rpm %config(noreplace): local edits survive upgrades.
+            printf '    type: config|noreplace\n    file_info:\n      mode: 0%s\n' "${mode#0}"
         else
             printf '    file_info:\n      mode: 0%s\n' "${mode#0}"
         fi

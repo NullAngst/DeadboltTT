@@ -24,6 +24,15 @@ if [ ! -d /run/systemd/system ] || ! have systemctl; then
     exit 0
 fi
 
+# Deadbolt's clamd profile. Load it before clamd (re)starts below, or the
+# distro's /usr/sbin/clamd profile applies and clamd cannot read its config.
+aa_profile=/etc/apparmor.d/deadbolt-clamd
+if have apparmor_parser && [ -d /sys/kernel/security/apparmor ] && [ -f "$aa_profile" ]; then
+    if ! apparmor_parser -r -T -W "$aa_profile"; then
+        printf 'deadbolt: could not load %s, deadbolt-clamd will not start until it is loaded\n' "$aa_profile" >&2
+    fi
+fi
+
 systemctl daemon-reload
 systemctl reload dbus.service >/dev/null 2>&1 \
     || systemctl reload dbus-broker.service >/dev/null 2>&1 \

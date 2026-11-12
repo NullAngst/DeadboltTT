@@ -1,5 +1,17 @@
 # Changes
 
+2026.11.11 - Bug fix
+
+* `deadbolt-clamd.service` runs clamd under Deadbolt's own AppArmor profile, `deadbolt-clamd`, through `AppArmorProfile=-deadbolt-clamd`, and starts after `apparmor.service`
+* New profile `data/apparmor/deadbolt-clamd`, installed to `/etc/apparmor.d/deadbolt-clamd` as a config file (deb conffile, rpm noreplace), with `/etc/apparmor.d/local/deadbolt-clamd` for local additions
+* Post-install loads the profile before clamd is started or restarted; pre-remove unloads it. The distro's `/usr/sbin/clamd` profile is never edited
+* `packaging/manifest.txt` has a `config` kind, which `build-packages.sh` packages as `config|noreplace`
+* `deadboltctl doctor` has a kernel row, "AppArmor profile deadbolt-clamd", required when a distro clamd profile is loaded
+* CI checks that the profile is loaded after install, and "Logs on failure" prints AppArmor denials from the kernel log
+* maintenance.md and docs/SECURITY.md cover the profile
+
+Reasons for changes: the integration job ended with "clamd is installed but its service is not running" while clamonacc was fine. Ubuntu's clamav-daemon ships an enforcing AppArmor profile for /usr/sbin/clamd that only allows /etc/clamav/clamd.conf and /run/clamav/clamd.ctl. Deadbolt's clamd reads /etc/deadbolt/clamd.conf and listens on /run/deadbolt-clamd/clamd.ctl, so it was denied, exited, and sat in auto-restart. clamonacc has no distro profile, which is why only clamd showed as stopped. The same profile ships on Debian and openSUSE, so this broke real installs too, not just CI. A named profile selected by the unit was picked over editing the distro's local override, since that file belongs to the distro package's world and clamd also has to read whatever descriptors the worker passes it, which the distro profile does not allow.
+
 2026.11.09 - Bug fix
 
 * The "done" setup step refreshes the system requirements report before setup reports status

@@ -8,7 +8,7 @@ How to check Deadbolt and keep it current every couple of months. The monthly se
 2. Check for known-vulnerable crates: `cargo audit && cargo deny check`. A failure here blocks a release in CI too.
 3. Build and test: `cargo clippy --all-targets -- -D warnings && cargo test`, then `QT_QPA_PLATFORM=offscreen python3 -m pytest gui/`.
 4. Lint the rest: `pipx run ruff check gui/` (or whichever way you run ruff) and `shellcheck tools/deadbolt-shield-test scripts/*.sh packaging/*.sh packaging/scripts/*.sh`.
-5. Check ClamAV: `clamd --version` against the ClamAV releases page. If your distro is behind on a security fix, the dashboard says so ("a ClamAV security update is waiting"). Update through your package manager, never by bundling.
+5. Check ClamAV: `clamd --version` against the ClamAV releases page. If your distro is behind on a security fix, the dashboard says so ("a ClamAV security update is waiting"). Update through your package manager, never by bundling. After a ClamAV update, `deadboltctl doctor` should still show clamd ok and, on AppArmor systems, the "AppArmor profile deadbolt-clamd" kernel row ok.
 6. Check OpenSnitch: compare `opensnitchd -version` with its releases, and skim its issue tracker for rule-matching bugs.
 7. Check the GitHub Actions in `.github/workflows/`: for each `uses:` line, look at the action's repo for a new major version or a security notice, and bump the tag if there is one.
 8. Run the live tests on a real machine: `deadboltctl test eicar` and `deadboltctl test shield`. Both should pass.
@@ -22,6 +22,7 @@ How to check Deadbolt and keep it current every couple of months. The monthly se
 - Real-time says notify-only: the kernel lacks `CONFIG_FANOTIFY_ACCESS_PERMISSIONS`. Nothing to fix in Deadbolt.
 - A filesystem shows as unprotected: it refused a fanotify mark (network filesystems usually do). That's a fact about the filesystem, and the dashboard says so instead of failing silently.
 - A legit app keeps getting frozen: choose Always allow (root-owned binaries only), or add an exclusion for the folder it works in.
+- deadbolt-clamd shows STOPPED on Debian, Ubuntu or openSUSE: check `journalctl -k | grep 'apparmor="DENIED"'`. If the denials name `/usr/sbin/clamd`, the distro's clamd profile was applied instead of Deadbolt's. Load Deadbolt's with `sudo apparmor_parser -r /etc/apparmor.d/deadbolt-clamd`, then `sudo systemctl restart deadbolt-clamd`. If the denials name `deadbolt-clamd`, a new ClamAV release touches a path the profile doesn't cover: add it in `/etc/apparmor.d/local/deadbolt-clamd` to get running again, and in `data/apparmor/deadbolt-clamd` for the next release.
 - clamd and the distro's clamav-daemon both running: an upgrade brought the distro unit back. The daemon re-masks it on the next package transaction; to do it now, run the wizard's clamd step again (`deadboltctl setup`).
 
 ## Where things live

@@ -1,0 +1,57 @@
+# AppArmor profile for Deadbolt's clamd (deadbolt-clamd.service).
+#
+# Debian, Ubuntu and openSUSE ship a profile that attaches to /usr/sbin/clamd
+# and only allows /etc/clamav/clamd.conf and /run/clamav/clamd.ctl. Under it,
+# clamd cannot read /etc/deadbolt/clamd.conf and exits, so the unit loops in
+# auto-restart. This named profile has no path attachment. The unit selects it
+# with AppArmorProfile=-deadbolt-clamd, so the distro profile stays in force
+# for the distro's own clamd and is never edited.
+#
+# Installed to /etc/apparmor.d/deadbolt-clamd and loaded by the package
+# post-install step. apparmor.service loads it at boot.
+
+abi <abi/3.0>,
+
+include <tunables/global>
+
+profile deadbolt-clamd flags=(attach_disconnected) {
+  include <abstractions/base>
+  include <abstractions/nameservice>
+  include <abstractions/openssl>
+
+  # clamd is a scanner: it reads whatever it is asked to scan, by path or as
+  # a passed file descriptor. Unix permissions and the unit's sandbox still
+  # decide what it can actually open. Writes stay limited to the lines below.
+  /** r,
+
+  /usr/{,s}bin/clamd mr,
+
+  # Socket, created, chowned and cleaned up by clamd (FixStaleSocket).
+  /run/deadbolt-clamd/ r,
+  /run/deadbolt-clamd/** rwk,
+
+  # Signature database: read, plus the lock clamd takes while loading.
+  /var/lib/clamav/ r,
+  /var/lib/clamav/** rk,
+
+  # Unpacking archives and CVDs. PrivateTmp=yes makes these private.
+  /tmp/ rw,
+  /tmp/** rwkl,
+  /var/tmp/ rw,
+  /var/tmp/** rwkl,
+
+  # Syslog, the listening socket, and the VirusEvent hook's connection.
+  unix,
+
+  # VirusEvent: clamd runs the command through /bin/sh -c.
+  /{usr/,}bin/{sh,dash,bash} ix,
+  /usr/libexec/deadbolt/virusevent ix,
+  /run/deadbolt/events.sock w,
+
+  # ExecReload=kill -USR2 $MAINPID runs under this profile too.
+  /{usr/,}bin/kill ix,
+  signal (send, receive) peer=deadbolt-clamd,
+  signal (receive) peer=unconfined,
+
+  include if exists <local/deadbolt-clamd>
+}

@@ -27,6 +27,12 @@ if [ -d /run/systemd/system ] && have systemctl; then
     done
 fi
 
+# Unload Deadbolt's clamd profile. The distro's own profile is not touched.
+aa_profile=/etc/apparmor.d/deadbolt-clamd
+if have apparmor_parser && [ -d /sys/kernel/security/apparmor ] && [ -f "$aa_profile" ]; then
+    apparmor_parser -R "$aa_profile" >/dev/null 2>&1 || true
+fi
+
 # Deadbolt's own OpenSnitch rules only.
 for f in /etc/opensnitchd/rules/*deadbolt-*.json; do
     [ -e "$f" ] || continue

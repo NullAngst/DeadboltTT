@@ -1,6 +1,8 @@
 # Every file Deadbolt installs. One source of truth for install.sh,
 # uninstall.sh and the .deb/.rpm builds (packaging/build-packages.sh).
 #
+# kind: file, tree, or config (a file under /etc that package upgrades
+# never overwrite once you have edited it)
 # kind  package  mode  source                                         destination
 # package: all = deadbolt and deadbolt-server, gui = deadbolt only
 file all 0755 target/release/deadboltd                          /usr/libexec/deadbolt/deadboltd
@@ -17,6 +19,7 @@ file all 0644 data/systemd/deadbolt-scan@.timer                 /usr/lib/systemd
 file all 0644 data/systemd/deadbolt-quarantine-purge.service    /usr/lib/systemd/system/deadbolt-quarantine-purge.service
 file all 0644 data/systemd/deadbolt-quarantine-purge.timer      /usr/lib/systemd/system/deadbolt-quarantine-purge.timer
 file all 0644 data/systemd/var-lib-deadbolt-quarantine.mount    /usr/lib/systemd/system/var-lib-deadbolt-quarantine.mount
+config all 0644 data/apparmor/deadbolt-clamd                 /etc/apparmor.d/deadbolt-clamd
 file all 0644 data/polkit/io.github.nullangst.deadbolt.policy   /usr/share/polkit-1/actions/io.github.nullangst.deadbolt.policy
 file all 0644 data/dbus/io.github.nullangst.Deadbolt1.conf      /usr/share/dbus-1/system.d/io.github.nullangst.Deadbolt1.conf
 file all 0644 data/sysctl/60-deadbolt.conf                      /usr/lib/sysctl.d/60-deadbolt.conf

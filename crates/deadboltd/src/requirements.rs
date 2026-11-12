@@ -210,7 +210,35 @@ pub fn kernel_checks() -> Vec<KernelCheck> {
             required: false,
         });
     }
+    if let Ok(list) = std::fs::read_to_string("/sys/kernel/security/apparmor/profiles") {
+        v.push(apparmor_check(&list));
+    }
     v
+}
+
+/// Debian, Ubuntu and openSUSE confine /usr/sbin/clamd to the distro's own
+/// config and socket paths, so Deadbolt's clamd runs under its own profile
+/// (AppArmorProfile= in deadbolt-clamd.service). If that profile is not
+/// loaded, the unit falls back to the distro profile and clamd exits.
+/// `list` is /sys/kernel/security/apparmor/profiles, one "name (mode)" per line.
+pub fn apparmor_check(list: &str) -> KernelCheck {
+    let name_of = |l: &str| l.rsplit_once(" (").map_or(l, |(n, _)| n).trim().to_string();
+    let names: Vec<String> = list.lines().map(name_of).collect();
+    let loaded = names.iter().any(|n| n == "deadbolt-clamd");
+    let distro = names
+        .iter()
+        .any(|n| n != "deadbolt-clamd" && (n == "clamd" || n.ends_with("/clamd")));
+    KernelCheck {
+        name: "AppArmor profile deadbolt-clamd".into(),
+        ok: loaded,
+        detail: if loaded {
+            "loaded".into()
+        } else {
+            "not loaded, clamd cannot start: sudo apparmor_parser -r /etc/apparmor.d/deadbolt-clamd"
+                .into()
+        },
+        required: distro,
+    }
 }
 
 pub fn blocking_supported(checks: &[KernelCheck]) -> bool {
@@ -300,5 +328,17 @@ mod tests {
         assert!(kernel_at_least("6.18.44-fc-v233", 5, 17));
         assert!(kernel_at_least("5.17.0", 5, 17));
         assert!(!kernel_at_least("5.15.0-91-generic", 5, 17));
+    }
+
+    #[test]
+    fn apparmor_profiles() {
+        let c = apparmor_check("/usr/sbin/clamd (enforce)\ndeadbolt-clamd (enforce)\n");
+        assert!(c.ok && c.required);
+        let c = apparmor_check("/usr/sbin/clamd (enforce)\n/usr/bin/freshclam (enforce)\n");
+        assert!(!c.ok && c.required);
+        let c = apparmor_check("clamd (complain)\n");
+        assert!(!c.ok && c.required);
+        let c = apparmor_check("firefox (unconfined)\n");
+        assert!(!c.ok && !c.required);
     }
 }

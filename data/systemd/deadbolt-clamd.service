@@ -1,13 +1,18 @@
 [Unit]
 Description=Deadbolt's clamd (ClamAV scan engine with Deadbolt's config)
 Documentation=man:clamd(8) https://github.com/NullAngst/DeadboltTT
-After=local-fs.target
+After=local-fs.target apparmor.service
 ConditionPathExists=/etc/deadbolt/clamd.conf
 
 [Service]
 Type=simple
 User=clamav
 Group=clamav
+# Debian, Ubuntu and openSUSE confine /usr/sbin/clamd to the distro's paths,
+# so clamd could not read /etc/deadbolt/clamd.conf. Deadbolt ships its own
+# profile in /etc/apparmor.d/deadbolt-clamd. The "-" lets the unit start on
+# systems without AppArmor. With AppArmor on, the profile must be loaded.
+AppArmorProfile=-deadbolt-clamd
 # Bare name: systemd looks it up on its default PATH, so /usr/sbin vs /usr/bin does not matter.
 ExecStart=clamd --foreground -c /etc/deadbolt/clamd.conf
 ExecReload=kill -USR2 $MAINPID
