@@ -180,6 +180,9 @@ jobs:
           curl_bin="$(readlink -f "$(command -v curl)")"
           sudo deadboltctl net block "$curl_bin"
           sleep 3
+          # opensnitchd logs this when its watcher picks up the new rule file.
+          sudo grep -q 'Ruleset changed due to 100-deadbolt-block-' /var/log/opensnitchd.log \
+            || { printf 'opensnitchd did not reload the block rule\n'; exit 1; }
           if curl -sS -m 10 -o /dev/null https://example.com; then
             printf 'curl still reached the internet while blocked\n'; exit 1
           fi
@@ -218,3 +221,5 @@ jobs:
           sudo systemctl status deadboltd deadbolt-worker deadbolt-clamd deadbolt-clamonacc --no-pager || true
           sudo journalctl -u deadboltd -u deadbolt-worker -u deadbolt-clamd -u deadbolt-clamonacc --no-pager | tail -200
           sudo journalctl -k --no-pager | grep -i 'apparmor="DENIED"' | tail -50 || true
+          sudo ls -la /etc/opensnitchd/rules || true
+          sudo tail -n 60 /var/log/opensnitchd.log || true
