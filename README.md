@@ -79,7 +79,7 @@ Themes: System (follows Plasma and keeps Breeze), Light, Dark, Verdigris, Kawaii
 - Home is your whole home folder. Full is `/` minus `/proc`, `/sys`, `/dev`, `/run` and the quarantine folder, and it asks for your password since it reads files you can't.
 - Drag files onto the window, or right-click "Scan with Deadbolt" in Dolphin, Nautilus (needs `python3-nautilus`) or Thunar (the wizard offers to add it, since Thunar has no system-wide menu folder).
 
-From a terminal: `deadboltctl scan ~/Downloads --action quarantine`. Exit codes are fixed: 0 clean, 1 threats found, 2 error. Every command takes `--json`.
+From a terminal: `deadboltctl scan ~/Downloads --action quarantine`. Exit codes are fixed: 0 clean, 1 threats found, 2 error. A scan with no threats where some files could not be scanned exits 2 and lists why, the same order clamscan uses. Every command takes `--json`.
 
 A weekly Quick scan runs Sundays at 3 AM, set up by the wizard. A missed scan runs at the next boot. Scheduled scans use half the normal threads and skip when you're on battery.
 

@@ -2,6 +2,16 @@
 
 2026.11.11 - Bug fix
 
+* The worker sends back why a file could not be scanned ("path: reason") for the first 20 failures in a job, instead of only counting them
+* Scan summaries carry those reasons in a new `problems` list, and `deadboltctl scan` prints them under "not scanned:"
+* `deadboltctl scan` exits 2 when no threats were found but some files could not be scanned. Threats still exit 1
+* A file removed, or replaced by something that is not a regular file, between the walk and the scan is skipped instead of counted as an error
+* README exit code line covers the new case
+
+Reasons for changes: the "Exit codes 0, 1, 2" step showed every manual scan failing on its one file, clean or EICAR, and the output gave a count with no reason. The clean scan still exited 0, which told a script the files were clean when clamd never read them. clamscan uses the same order (threats, then errors, then clean). Skipping vanished files keeps the weekly scheduled scan, whose unit only accepts exits 0 and 1, from failing on ordinary churn like browser caches. The cause of the scan errors themselves is still open: with these changes the next CI run prints clamd's reason in the step log.
+
+2026.11.11 - Bug fix
+
 * The shield decides whether a filesystem is read-only from its superblock options in mountinfo, not the mount options
 * A written file whose name gained a suffix right after the write ("a.docx.locked") still counts under its original type
 * The status banner goes amber when the shield is running but watching no filesystems

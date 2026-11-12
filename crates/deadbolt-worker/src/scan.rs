@@ -68,14 +68,24 @@ pub fn walk<'a>(
     })
 }
 
-pub fn scan_one(sess: &mut Session, path: &Path) -> Result<(Verdict, u64, u64), String> {
-    let fd = fsops::open_read(path).map_err(|e| e.to_string())?;
+/// Per-file errors sent back with their reason; the rest are only counted.
+const REPORTED_ERRORS: u64 = 20;
+
+/// `Ok(None)`: the file was removed or replaced by something that is not a
+/// regular file after the walk listed it. Nothing is left to scan, so it is
+/// neither an error nor a scanned file.
+pub fn scan_one(sess: &mut Session, path: &Path) -> Result<Option<(Verdict, u64, u64)>, String> {
+    let fd = match fsops::open_read(path) {
+        Ok(fd) => fd,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e.to_string()),
+    };
     let st = fsops::stat_fd(&fd).map_err(|e| e.to_string())?;
     if !fsops::is_regular(&st) {
-        return Err("not a regular file".into());
+        return Ok(None);
     }
     let v = sess.scan_fd(fd.as_fd()).map_err(|e| e.to_string())?;
-    Ok((v, st.st_dev, st.st_ino))
+    Ok(Some((v, st.st_dev, st.st_ino)))
 }
 
 pub type Out = Arc<Mutex<dyn FnMut(&Reply) + Send>>;
@@ -178,7 +188,7 @@ fn run_clamd(
                     *c = path.to_string_lossy().into_owned();
                 }
                 match scan_one(&mut sess, &path) {
-                    Ok((Verdict::Found(sig), dev, ino)) => {
+                    Ok(Some((Verdict::Found(sig), dev, ino))) => {
                         found.fetch_add(1, Ordering::SeqCst);
                         emit(
                             &out,
@@ -191,9 +201,19 @@ fn run_clamd(
                             },
                         );
                     }
-                    Ok((Verdict::Clean, _, _)) => {}
-                    Ok((Verdict::Error(_), _, _)) | Err(_) => {
-                        errors.fetch_add(1, Ordering::SeqCst);
+                    Ok(Some((Verdict::Clean, _, _))) => {}
+                    // Gone since the walk: not scanned, not an error.
+                    Ok(None) => continue,
+                    Ok(Some((Verdict::Error(e), _, _))) | Err(e) => {
+                        // Report why, for the first few. A count alone says nothing.
+                        if errors.fetch_add(1, Ordering::SeqCst) < REPORTED_ERRORS {
+                            emit(
+                                &out,
+                                Reply::Error {
+                                    message: format!("{}: {e}", path.display()),
+                                },
+                            );
+                        }
                         // A broken session (clamd restarted) gets reopened.
                         if let Ok(s) = Session::open(&sock) {
                             sess = s;

@@ -313,18 +313,26 @@ async fn run(cli: Cli) -> Result<i32, ClientError> {
                 }
             }
             let mut human = format!(
-                "{} files scanned, {} threats",
+                "{} files scanned, {} threats, {} could not be scanned",
                 summary.files,
-                summary.detections.len()
+                summary.detections.len(),
+                summary.errors
             );
             for d in &summary.detections {
                 human.push_str(&format!("\n{}: {} ({})", d.path, d.signature, d.action));
             }
+            for p in &summary.problems {
+                human.push_str(&format!("\nnot scanned: {p}"));
+            }
             out.print(human, serde_json::to_value(&summary).unwrap_or_default());
-            Ok(if summary.detections.is_empty() {
-                exitcode::CLEAN
-            } else {
+            // Same order as clamscan: threats win, then any file that could not
+            // be scanned, since "clean" would be a claim about files nobody read.
+            Ok(if !summary.detections.is_empty() {
                 exitcode::THREATS
+            } else if summary.errors > 0 {
+                exitcode::ERROR
+            } else {
+                exitcode::CLEAN
             })
         }
         Cmd::Quarantine { cmd } => match cmd {

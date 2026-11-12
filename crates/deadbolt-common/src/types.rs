@@ -122,6 +122,9 @@ pub struct ScanSummary {
     pub errors: u64,
     pub detections: Vec<Detection>,
     pub state: JobState,
+    /// Why files could not be scanned, "path: reason", first few only.
+    #[serde(default)]
+    pub problems: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

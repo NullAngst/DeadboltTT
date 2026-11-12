@@ -26,6 +26,8 @@ pub const IFACE_SCAN: &str = "io.github.nullangst.Deadbolt1.Scan";
 pub const IFACE_SHIELD: &str = "io.github.nullangst.Deadbolt1.Shield";
 pub const IFACE_SETTINGS: &str = "io.github.nullangst.Deadbolt1.Settings";
 
+/// Problem messages kept in a scan summary; the full list is in history.
+const MAX_PROBLEMS: usize = 20;
 pub struct FrozenEntry {
     pub incident: Incident,
     pub frozen: Frozen,
@@ -542,6 +544,7 @@ impl App {
             errors: 0,
             detections: Vec::new(),
             state: JobState::Counting,
+            problems: Vec::new(),
         };
         if let Ok(mut j) = self.jobs.lock() {
             j.insert(
@@ -604,6 +607,12 @@ impl App {
                     }
                     Reply::Error { message } => {
                         me.history.log("scan", "Scan problem", &message);
+                        if let Ok(mut j) = me.jobs.lock()
+                            && let Some(job) = j.get_mut(&jid)
+                            && job.summary.problems.len() < MAX_PROBLEMS
+                        {
+                            job.summary.problems.push(message);
+                        }
                     }
                     Reply::Done {
                         files,
