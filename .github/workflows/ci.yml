@@ -43,6 +43,21 @@ jobs:
       - name: cargo test
         run: cargo test
 
+      # The worker's file helpers again, inside the same seccomp settings as
+      # deadbolt-worker.service. RestrictSUIDSGID=yes answers openat2 with
+      # ENOSYS, so this exercises the per-component fallback.
+      - name: Worker tests under the unit's seccomp settings
+        run: |
+          bin=$(cargo test -p deadbolt-worker --no-run 2>&1 | grep -o 'target/debug/deps/deadbolt_worker-[0-9a-f]*' | tail -n 1)
+          test -n "$bin"
+          sudo systemd-run --wait --pipe --collect --quiet \
+            -p RestrictSUIDSGID=yes \
+            -p SystemCallArchitectures=native \
+            -p SystemCallFilter=@system-service \
+            -p SystemCallErrorNumber=EPERM \
+            -p WorkingDirectory="$PWD" \
+            "$PWD/$bin"
+
       - name: cargo audit
         run: cargo audit
 
