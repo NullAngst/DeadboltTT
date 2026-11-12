@@ -2,6 +2,15 @@
 
 2026.11.12 - Bug fix
 
+* OpenSnitch rule files are still written to a temp name and renamed into place, then get their trailing newline appended, so opensnitchd's rules watcher sees a Write event and loads the rule right away
+* Applies to per-app block rules, LAN allow rules, and the deny-temp-folders rule
+* New unit test: rule files are complete JSON with one trailing newline, rewrites work, no temp file is left behind
+* CI checks opensnitchd logged "Ruleset changed" for the block rule before testing curl, and "Logs on failure" prints the rules folder and the end of the OpenSnitch log
+
+Reasons for changes: the network block test reported "Blocked curl" but curl still reached the internet. OpenSnitch's rules watcher (daemon/rule/loader.go, liveReloadWorker) reloads only on fsnotify Write and Remove events. Deadbolt's rename into place arrives as Create, which it ignores, so new rules stayed on disk unloaded until opensnitchd restarted. Unblocking happened to work, since deleting a file is a Remove. Checked with a watcher built on OpenSnitch's own fsnotify version (1.4.7) and its exact filter: the old write pattern produced only ignored Create events, the new one produced a reload of the complete file. Appending the newline keeps the reason for the rename: at every moment the .json file is complete, valid JSON.
+
+2026.11.12 - Bug fix
+
 * The worker's file helpers fall back to walking the path one component at a time with `openat(O_NOFOLLOW)` when `openat2` returns ENOSYS. Symlinks are still refused in every component, with the same ELOOP error
 * Covers scanning, quarantine, restore and canary planting, which all go through these helpers
 * New unit test for the fallback: symlinked directory, symlinked file, "..", creating relative to a directory descriptor, and "/"

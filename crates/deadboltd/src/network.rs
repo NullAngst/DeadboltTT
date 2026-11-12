@@ -195,16 +195,27 @@ impl Rules {
     }
 
     pub fn write(&self, file: &str, rule: &Rule) -> std::io::Result<()> {
+        use std::io::Write;
         if !file.contains("deadbolt-") || file.contains('/') {
             return Err(std::io::Error::other(
                 "refusing to write a rule not named *deadbolt-*",
             ));
         }
+        // No trailing newline yet: to_vec_pretty does not add one.
         let data = serde_json::to_vec_pretty(rule)?;
         // Temp name without .json so opensnitchd never loads a half-written file.
         let tmp = self.dir.join(format!(".{file}.tmp"));
+        let dest = self.dir.join(format!("{file}.json"));
         std::fs::write(&tmp, data)?;
-        std::fs::rename(tmp, self.dir.join(format!("{file}.json")))
+        std::fs::rename(tmp, &dest)?;
+        // opensnitchd's rules watcher reloads on fsnotify Write and Remove
+        // only. A rename arrives as Create and is ignored, so the rule would
+        // sit unloaded until opensnitchd restarts. Appending the newline is a
+        // Write on a file that is already complete, valid JSON either way.
+        std::fs::OpenOptions::new()
+            .append(true)
+            .open(&dest)?
+            .write_all(b"\n")
     }
 
     pub fn remove(&self, file: &str) -> std::io::Result<()> {
@@ -619,6 +630,28 @@ mod tests {
         assert_eq!(c[0].process, "firefox");
         assert_eq!(c[0].pid, 4242);
         assert_eq!(c[0].peer, "140.82.112.3:443");
+    }
+
+    #[test]
+    fn rule_files_are_complete_json_and_leave_no_temp() {
+        let dir = std::env::temp_dir().join(format!("dbt-rules-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let rules = Rules { dir: dir.clone() };
+        let (f, r) = block_rule("Sh", "native", "/bin/sh").unwrap();
+        rules.write(&f, &r).unwrap();
+        // Rewriting an existing rule goes through the same path.
+        rules.write(&f, &r).unwrap();
+        let text = std::fs::read_to_string(dir.join(format!("{f}.json"))).unwrap();
+        assert!(text.ends_with("}\n") && !text.ends_with("\n\n"));
+        assert_eq!(serde_json::from_str::<Rule>(&text).unwrap(), r);
+        let names: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(names, vec![format!("{f}.json")]);
+        assert!(rules.write("../escape", &r).is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
