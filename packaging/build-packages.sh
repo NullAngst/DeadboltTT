@@ -27,7 +27,11 @@ fi
 
 version="${1:-}"
 [ -n "$version" ] || die "usage: bash packaging/build-packages.sh VERSION"
-version="${version#v}"
+version="${version#[vV]}"
+case "$version" in
+    [0-9]*) ;;
+    *) die "version must start with a digit, like 1.2.3 or v1.2.3: $1" ;;
+esac
 arch="${ARCH:-amd64}"
 out="${OUT_DIR:-dist}"
 manifest=packaging/manifest.txt

@@ -13,7 +13,7 @@ How to check Deadbolt and keep it current every couple of months. The monthly se
 7. Check the GitHub Actions in `.github/workflows/`: for each `uses:` line, look at the action's repo for a new major version or a security notice, and bump the tag if there is one.
 8. Run the live tests on a real machine: `deadboltctl test eicar` and `deadboltctl test shield`. Both should pass.
 9. Look at near misses: `deadboltctl history --kind shield`. A legit tool scoring 50 to 99 again and again is a candidate for the allowlist, or a sign the scoring needs a look.
-10. Tag a release (`git tag v0.x.y && git push --tags`) so the packages rebuild with current dependencies, and add an entry to `changes.md`.
+10. Publish a release so the packages rebuild with current dependencies, and add an entry to `changes.md`. On GitHub: Releases, Draft a new release, new tag like `v0.x.y` (lowercase or uppercase v, then a number), Publish. The Release workflow builds and attaches the .deb, .rpm, source tarball and SHA256SUMS within a few minutes. If a release ends up without files, open Actions, Release, Run workflow, and enter its tag.
 
 ## When something breaks
 

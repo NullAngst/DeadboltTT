@@ -1,5 +1,17 @@
 # Changes
 
+2026.11.12 - Build and release
+
+* The Release workflow runs when a release is published on GitHub, instead of on a pushed tag matching `v*`
+* It can also be run by hand from the Actions tab with a tag, to build and attach files to an existing release or rebuild one
+* Files are attached with `gh release upload --clobber`, so a rerun replaces them instead of failing
+* The workflow checks that a release exists for the tag and that the tag reads as a version, and says so plainly if not
+* `build-packages.sh` accepts `V1.2.3` as well as `v1.2.3`, and rejects versions that do not start with a digit before nfpm sees them
+* CI can be run by hand from the Actions tab (workflow_dispatch)
+* maintenance.md describes publishing a release from the web UI
+
+Reasons for changes: releases published from the web UI got no files. The existing tags are `V1.0.0` and `F1.0.1`, and the old trigger matched only lowercase `v*`, so the Release workflow never ran. The build seen on release was the CI workflow, which also runs on tag pushes but only keeps its packages as a run artifact. Triggering on the published release removes the dependence on tag spelling. CI had no manual trigger at all.
+
 2026.11.12 - Bug fix
 
 * OpenSnitch rule files are still written to a temp name and renamed into place, then get their trailing newline appended, so opensnitchd's rules watcher sees a Write event and loads the rule right away
