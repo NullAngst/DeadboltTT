@@ -1,6 +1,6 @@
 # Deadbolt: Track and Terminate
 
-Deadbolt is a normal-looking anti-malware app for Linux desktops and servers that drives ClamAV, fanotify, and OpenSnitch
+Deadbolt is a normal-looking anti-malware app for Linux desktops and servers that drives ClamAV, fanotify, and OpenSnitch.
 
 It does five jobs:
 
