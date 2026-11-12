@@ -129,6 +129,12 @@ jobs:
       - name: Install Deadbolt
         run: sudo apt-get install -y ./dist/deadbolt_*_amd64.deb
 
+      - name: AppArmor profile for deadbolt-clamd is loaded
+        run: |
+          if [ -d /sys/kernel/security/apparmor ]; then
+            sudo grep -q '^deadbolt-clamd ' /sys/kernel/security/apparmor/profiles
+          fi
+
       - name: Setup
         run: |
           sudo deadboltctl setup --yes
@@ -196,3 +202,4 @@ jobs:
           sudo deadboltctl doctor || true
           sudo systemctl status deadboltd deadbolt-worker deadbolt-clamd deadbolt-clamonacc --no-pager || true
           sudo journalctl -u deadboltd -u deadbolt-worker -u deadbolt-clamd -u deadbolt-clamonacc --no-pager | tail -200
+          sudo journalctl -k --no-pager | grep -i 'apparmor="DENIED"' | tail -50 || true
