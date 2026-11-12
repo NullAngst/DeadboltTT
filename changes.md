@@ -1,5 +1,14 @@
 # Changes
 
+2026.11.12 - Bug fix
+
+* The worker's file helpers fall back to walking the path one component at a time with `openat(O_NOFOLLOW)` when `openat2` returns ENOSYS. Symlinks are still refused in every component, with the same ELOOP error
+* Covers scanning, quarantine, restore and canary planting, which all go through these helpers
+* New unit test for the fallback: symlinked directory, symlinked file, "..", creating relative to a directory descriptor, and "/"
+* CI runs the worker's tests a second time under `systemd-run` with the unit's seccomp settings (RestrictSUIDSGID, @system-service)
+
+Reasons for changes: the scan step now printed the reason, "Function not implemented (os error 38)". deadbolt-worker.service has RestrictSUIDSGID=yes, and systemd blocks openat2 entirely under that setting with ENOSYS, because seccomp cannot read the mode inside struct open_how and so cannot tell whether a call creates a setuid file. Every file operation in the worker used openat2 with no fallback, so under systemd it could not open anything: scans errored, and quarantine, restore and canaries were broken the same way. The fallback keeps both protections instead of dropping RestrictSUIDSGID. Reproduced locally with a seccomp filter that answers openat2 with ENOSYS: all 12 worker tests, including the quarantine round trip, pass with it in place.
+
 2026.11.11 - Bug fix
 
 * The worker sends back why a file could not be scanned ("path: reason") for the first 20 failures in a job, instead of only counting them
